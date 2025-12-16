@@ -1,512 +1,336 @@
-# Computer Graphics – Raster Images & Animation
+# Heart & Star Particle Animation System
 
-> **To get started:** Clone this repository:
->
->     git clone --recursive git@github.com:ohnooj/computer-graphics-raster-images.git
+A procedural animation system that generates pulsing heart and star effects using particle-based rendering and parametric shape generation.
 
-**Do not fork:** Clicking "Fork" will create a _public_ repository. If you'd like to use GitHub while you work on your assignment, then mirror this repo as a new _private_ repository: https://stackoverflow.com/questions/10065526/github-how-to-make-a-fork-of-public-repository-private
+## 🎬 Animation Preview
 
+![Star Animation](build/star_animation.gif)
 
-## Introduction
+*Pulsing star animation with 30 frames showing smooth contraction and expansion*
 
-Welcome to Computer Graphics! This project combines fundamental raster image processing operations with procedural animation generation. The main purpose is to get you up and running with C++20 and cmake≥3.20 build setup while exploring both static image manipulation and dynamic animation creation.
+## ✨ Features
 
+- **Procedural Shape Generation**: Heart and star shapes created using parametric equations
+- **Particle System**: Thousands of colored particles with gradient effects
+- **Smooth Animation**: Cosine wave-based pulsing with configurable amplitude
+- **Multiple Output Formats**: Individual PPM frames + animated GIF
+- **JSON Persistence**: Save and load particle distributions for consistency
+- **Property-Based Testing**: Mathematical validation of animation properties
 
-### Prerequisite installation
+## 🚀 Quick Start
 
-On all platforms, we will assume you have installed cmake and a modern c++
-compiler on Mac OS X[¹](#¹macusers), Linux[²](#²linuxusers), or
-Windows[³](#³windowsusers).
+### Prerequisites
 
-We also assume that you have cloned this repository using the `--recursive`
-flag (if not then issue `git submodule update --init --recursive`).
+- **C++20** compatible compiler
+- **CMake** ≥ 3.20
+- **ImageMagick** (optional, for GIF creation)
 
-**Optional for GIF creation:** Install [ImageMagick](https://imagemagick.org/script/download.php) to enable animated GIF generation from frame sequences.
+### Build & Run
 
-### Layout
+```bash
+# Clone and build
+git clone --recursive <repository-url>
+cd pixel_animation
+mkdir build && cd build
+cmake ..
+make
 
-All assignments will have a similar directory and file layout:
+# Generate animations
+./raster
+```
 
-    README.md
-    CMakeLists.txt
-    main.cpp
-    include/
-      function1.h
-      function2.h
-      ...
-    src/
-      function1.cpp
-      function2.cpp
-      ...
-    data/
-      ...
+### Output Files
+
+The program generates:
+
+**Heart Animation:**
+- `heart_static.ppm` - Single frame rendering
+- `heart_frame_000.ppm` to `heart_frame_029.ppm` - 30 animation frames
+- `../data/heart.json` - Particle distribution data
+
+**Star Animation:**
+- `star_static.ppm` - Single frame rendering  
+- `star_frame_000.ppm` to `star_frame_029.ppm` - 30 animation frames
+- `star_animation.gif` - Animated GIF (requires ImageMagick)
+- `../data/star.json` - Particle distribution data
+
+## 🎨 Animation System
+
+### Heart Animation
+
+The heart shape is generated using parametric equations:
+```
+x(t) = 16 * sin³(t)
+y(t) = 13 * cos(t) - 5 * cos(2t) - 2 * cos(3t) - cos(4t)
+```
+
+**Features:**
+- **Color Gradient**: Bright pink/white (center) → dark red/pink (edges)
+- **Particle Distribution**: Denser at edges, sparser in center
+- **Pulsing Effect**: Smooth contraction/expansion using cosine waves
+
+### Star Animation
+
+The five-pointed star uses alternating radius values:
+```
+For angle θ ∈ [0, 2π]:
+- Radius alternates between outer_radius and inner_radius
+- x = radius(θ) * cos(θ)
+- y = radius(θ) * sin(θ)
+```
+
+**Features:**
+- **Color Gradient**: Bright yellow/white (edges) → orange/red (center)
+- **Sparkle Effect**: Random particle offsets for organic appearance
+- **GIF Export**: Automatic animated GIF creation
+
+### Animation Mathematics
+
+Both animations use cosine wave functions for smooth pulsing:
+
+```cpp
+// Contraction factor calculation
+double phase = (2.0 * M_PI * frame) / total_frames;
+double contraction_factor = 1.0 - amplitude * (1.0 + cos(phase)) / 2.0;
+```
+
+This creates:
+- **Frame 0**: Most contracted (factor = 1.0 - amplitude)
+- **Frame N/2**: Fully expanded (factor = 1.0)
+- **Frame N**: Back to contracted (seamless loop)
+
+## 🏗️ Architecture
+
+### Core Components
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Shape Generator │───▶│ JSON Storage    │───▶│ Point Renderer  │
+│ - Heart curve   │    │ - Persistence   │    │ - Dark purple   │
+│ - Star curve    │    │ - Load/Save     │    │   background    │
+│ - Color gradient│    │ - Error handling│    │ - Pixel plotting│
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Point Transform │    │ Centroid Calc   │    │ GIF Creation    │
+│ - Scale toward  │    │ - Geometric     │    │ - ImageMagick   │
+│   center        │    │   center        │    │ - Frame delay   │
+│ - Preserve      │    │ - Animation     │    │ - Loop settings │
+│   topology      │    │   anchor        │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### Data Structures
+
+```cpp
+// Heart particle
+struct HeartPoint {
+  double x, y;              // Coordinates
+  unsigned char r, g, b;    // RGB color [0-255]
+};
+
+// Star particle (identical structure)
+struct StarPoint {
+  double x, y;              // Coordinates  
+  unsigned char r, g, b;    // RGB color [0-255]
+};
+```
+
+### JSON Format
+
+```json
+{
+  "points": [
+    {"x": 250.5, "y": 300.2, "r": 255, "g": 100, "b": 150},
+    {"x": 251.3, "y": 301.8, "r": 240, "g": 90, "b": 140},
     ...
-
-The `README.md` file will describe the background, contents and tasks of the
-assignment.
-
-The `CMakeLists.txt` file setups up the cmake build routine for this
-assignment.
-
-The `main.cpp` file will include the headers in the `include/` directory and
-link to the functions compiled in the `src/` directory. This file contains the
-`main` function that is executed when the program is run from the command line.
-
-The `include/` directory contains one file for each function that you will
-implement as part of the assignment. **_Do not change_** these files.
-
-The `src/` directory contains _empty implementations_ of the functions
-specified in the `include/` directory. This is where you will implement the
-parts of the assignment.
-
-The `data/` directory contains _sample_ input data for your program. Keep in
-mind you should create your own test data to verify your program as you write
-it. It is not necessarily sufficient that your program _only_ works on the given
-sample data.
-
-## Compilation
-
-This and all following assignments will follow a typical cmake/make build
-routine. Starting in this directory, issue:
-
-    mkdir build
-    cd build
-    cmake ..
-
-If you are using Mac or Linux, then issue:
-
-    make
-
-If you are using Windows, then running `cmake ..` should have created a Visual Studio solution file
-called `raster.sln` that you can open and build from there. Building the raster project will generate an .exe file.
-
-Why don't you try this right now?
-
-## Execution
-
-Once built, you can execute the assignment from inside the `build/` using
-
-    ./raster
-
-The program will:
-1. Process the default images (dog.png, glasses.png, laser-beams.png, sparkles.png) through all image processing operations
-2. Generate heart and star point distributions (saved as JSON files)
-3. Create static renderings of heart and star shapes
-4. Generate 30-frame animations showing pulsing heart and star effects
-5. Create an animated GIF (if ImageMagick is available)
-
-You can also specify custom input images:
-
-    ./raster path/to/your/image.png
-
-## Background
-
-> Every assignment, including this one, will start with a **Background**
-> section. This will cite a chapter of the book to read or review the math and
-> algorithms behind the task in the assignment. Students following the lectures
-> should already be familiar with this material.
-
-### Read Chapter 3 of _Fundamentals of Computer Graphics (4th Edition)_.
-
-The most common digital representation of a color image is a 2D array of
-red/green/blue intensities at pixels. Since each entry in the array is actually
-a 3-vector of color values, we can interpret an image as a 3-tensor or 3D array.
-Memory on the computer is addressed linear, so an RGB image with a certain
-`width` and `height` will be represented as `width*height*3` numbers. How these
-numbers are ordered is a matter of convention. In our assignment we use the
-convention that the red value of pixel in the top-left corner comes first, then
-its green value, then its blue value, and then the rgb values of its neighbor to
-the right and so on _across_ the row of pixels, and then moving to the next row
-_down_ the columns of rows.
-
-> Q: Suppose you have a 767 × 772 rgb image stored in an array called `data`. How
-> would you access the green value at the pixel on the 36th row and 89th
-> column?
->
-> A: `data[1 + 3*(88+767*35)]` (Remember C++ starts counting with `0`).
-
-### Alpha map
-
-Natural images (e.g., photographs) only require color information, but to
-manipulate images it is often useful to also store a value representing how much
-of a pixel is "covered" by the given color. Intuitively this value (called alpha
-or <img src="/tex/c745b9b57c145ec5577b82542b2df546.svg?invert_in_darkmode&sanitize=true" align=middle width=10.57650494999999pt height=14.15524440000002pt/> represents how opaque (the opposite of _transparent_) each pixel is.
-When we store rgb + α image as a _4_-channel rgba image. Just like rgb images,
-rgba images are 3D arrays unrolled into a linear array in memory.
-
-.png files can store rgba images, whereas our simpler .ppm file format only
-stores grayscale or rgb images.
-
-### .ppm files
-
-We'll use a very basic _uncompressed_ image file format to write out the results
-of our tasks: the [.ppm](https://en.wikipedia.org/wiki/Netpbm_format#File_format_description).
-
-Like many image file formats, .ppm uses 8 bits per color value. Color
-intensities are represented as an integer between `0` (0% intensity) and `255`
-(100% intensity). In our programs we will use `unsigned char` to represent these
-values when reading, writing and doing simple operations. For numerically
-sensitive computations (e.g., conversion between rgb and hsv), it is convenient
-to convert values to decimal representations using [double precision floating
-point
-numbers](https://en.wikipedia.org/wiki/Double-precision_floating-point_format)
-`0` is converted to `0.0` and `255` to `1.0`.
-
-To simplify the implementation and to help with debugging, we will use the
-text-based .ppm formats for this assignment.
-
-## Grayscale Images
-
-Surprisingly there are
-[many](https://en.wikipedia.org/wiki/Grayscale#Converting_color_to_grayscale)
-acceptable and reasonable ways to convert a color image into a
-[grayscale](https://en.wikipedia.org/wiki/Grayscale) ("black and white") image.
-The complexity of each method scales with the amount that method accommodates
-for human perception. For example, a very naive method is to average red, green
-and blue intensities. A slightly better (and very popular method) is to take a
-weighted average giving higher priority to green:
-
-<p align="center"><img src="/tex/a954b221cf9264cf11fcf943891f27bb.svg?invert_in_darkmode&sanitize=true" align=middle width=232.67438535pt height=14.611878599999999pt/></p>
-
-> Q: Why are humans more sensitive to green?
->
-> Hint: 🐒
-
-## Mosaic images
-
-The raw color measurements made by modern digital cameras are typically stored
-with a single color channel per pixel. This information is stored as a seemingly
-1-channel image, but with an understood convention for interpreting each pixel
-as the red, green or blue intensity value given some pattern. The most common is
-the [Bayer pattern](https://en.wikipedia.org/wiki/Bayer_filter).  In this
-assignment, we'll follow the GBRG pattern and assume the top left pixel is green, its right neighbor is blue
-and neighbor below is red, and its [kitty-corner](https://en.wiktionary.org/wiki/kitty-corner#Adverb) neighbor is
-also green.
-
-> Q: Why are more sensors devoted to green?
->
-> Hint: 🐒
-
-To _demosaic_ an image, we would like to create a full rgb image without
-downsampling the image resolution. So for each pixel, we'll use the exact color
-sample when it's available and average available neighbors (in all 8 directions)
-to fill in missing colors. This simple [linear
-interpolation-based](https://www.ics.uci.edu/~majumder/PHOTO/DemosaicingAndWhiteBalancing.pdf)
-method has some blurring artifacts and can be improved with more complex
-methods.
-
-![The Bayer-pattern image on the left has "exact" measurements of red, green and
-blue colors at different pixels. The missing color information at each pixel
-needs to be interpolated from neighbors (4 or 2). _Just do "something
-reasonable" for pixels on the very boundary of the image._ [image source](https://www.ics.uci.edu/~majumder/PHOTO/DemosaicingAndWhiteBalancing.pdf) ](images/bayer-info.png)
-
-## Color representation
-
-RGB is just one way to represent a color. Another useful representation is store
-the [hue, saturation, and value](https://en.wikipedia.org/wiki/HSL_and_HSV) of a
-color. This "hsv" representation also has 3-channels: typically, the
-[hue](https://en.wikipedia.org/wiki/Hue) or `h` channel is stored in degrees
-(i.e., on a periodic scale) in the range <img src="/tex/79e8ecba3844cf52c00856dfc8f397ea.svg?invert_in_darkmode&sanitize=true" align=middle width=64.42934684999999pt height=24.65753399999998pt/> and the
-[saturation](https://en.wikipedia.org/wiki/Colorfulness) `s` and
-[value](https://en.wikipedia.org/wiki/Lightness) `v` are given as absolute
-values in <img src="/tex/acf5ce819219b95070be2dbeb8a671e9.svg?invert_in_darkmode&sanitize=true" align=middle width=32.87674994999999pt height=24.65753399999998pt/>.
-
-[Converting between rgb and
-hsv](https://en.wikipedia.org/wiki/HSL_and_HSV#Converting_to_RGB) is
-straightforward and makes it easy to implement certain image changes such as
-shifting the hue of an image (e.g., Instagram's "warmth" filter) and the
-saturation of an image (e.g., Instagram's "saturation" filter).
-
-## Tasks
-
-> This project contains both the original raster image processing tasks and additional animation generation features. The tasks are organized into two main categories: **Core Image Processing** and **Animation Generation**.
-
-## Core Image Processing Tasks
-
-### Groundrules
-
-Implementations of nearly any task you're asked to implemented in this course
-can be found online. Do not copy these and avoid _googling for code_; instead,
-search the internet for explanations. Many topics have relevant wikipedia
-articles. Use these as references. Always remember to cite any references in
-your comments.
-
-#### White List
-
-Feel free and encouraged to use standard template library functions in `#include
-<algorithm>` and `#include <cmath>` such as `std::fmod` and `std::fabs`.
-
-
-### `src/rgba_to_rgb.cpp`
-
-Extract the 3-channel rgb data from a 4-channel rgba image.
-
-### `src/write_ppm.cpp`
-
-Write an rgb or grayscale image to a .ppm file.
-
-At this point, you should start seeing output files:
-
-**Core Image Processing Output:**
- - `bayer.ppm`
- - `composite.ppm`
- - `demosaicked.ppm`
- - `desaturated.ppm`
- - `gray.ppm`
- - `reflected.ppm`
- - `rgb.ppm`
- - `rotated.ppm`
- - `shifted.ppm`
-
-**Animation Output:**
- - `heart_static.ppm` - Static heart rendering
- - `star_static.ppm` - Static star rendering
- - `heart_frame_000.ppm` to `heart_frame_029.ppm` - Heart animation frames
- - `star_frame_000.ppm` to `star_frame_029.ppm` - Star animation frames
- - `star_animation.gif` - Animated GIF (requires ImageMagick)
- - `../data/heart.json` - Heart point distribution data
- - `../data/star.json` - Star point distribution data
-
-![If you've implemented `src/rgba_to_rgb.cpp` correctly then `./raster
-../data/dog.png` should produce this image in
-`rgb.ppm`.](images/rgb.png)
-
-### `src/reflect.cpp`
-
-Horizontally reflect an image (like a mirror)
-
-![If you've implemented `src/write_ppm.cpp` correctly then `./raster
-../data/dog.png` should produce this image in
-`reflected.ppm`.](images/reflected.png)
-
-### `src/rotate.cpp`
-
-Rotate an image 90^\circ   counter-clockwise
-
-![`./raster
-../data/dog.png` should produce this image in
-`rotated.ppm`.](images/rotated.png)
-
-### `src/rgb_to_gray.cpp`
-
-Convert a 3-channel RGB image to a 1-channel grayscale image.
-
-![`./raster
-../data/dog.png` should produce this image in
-`gray.ppm`.](images/gray.png)
-
-### `src/simulate_bayer_mosaic.cpp`
-
-Simulate an image acquired from the Bayer mosaic by taking a 3-channel rgb image
-and creating a single channel grayscale image composed of interleaved
-red/green/blue channels. The output image should be the same size as the input but only one
-channel.
-
-![`./raster
-../data/dog.png` should produce this image in
-`bayer.ppm`. **Zoom in** to see interleaving.](images/bayer.png)
-
-### `src/demosaic.cpp`
-
-Given a mosaiced image (interleaved GBRG colors in a single channel), created a
-3-channel rgb image.
-
-![`./raster ../data/dog.png` should produce this image in
-`demosaicked.ppm`.](images/demosaicked.png)
-
-### `src/rgb_to_hsv.cpp`
-
-Convert a color represented by red, green and blue intensities to its
-representation using hue, saturation and value.
-
-### `src/hsv_to_rgb.cpp`
-
-Convert a color represented by hue, saturation and value to its representation
-using red, green and blue intensities.
-
-### `src/hue_shift.cpp`
-
-Shift the hue of a color rgb image.
-
-Hint: Use your `rgb_to_hsv` and `hsv_to_rgb` functions.
-
-![`./raster
-../data/dog.png` should produce this image in
-`shifted.ppm`.](images/shifted.png)
-
-### `src/desaturate.cpp`
-
-Desaturate a given rgb color image by a given factor.
-
-Hint: Use your `rgb_to_hsv` and `hsv_to_rgb` functions.
-
-![`./raster
-../data/dog.png` should produce this image in
-`desaturated.ppm`.](images/desaturated.png)
-
-### `src/over.cpp`
-
-Compute C = A Over B, where A and B are semi-transparent rgba images and
-"Over" is the Porter-Duff Over operator.
-
-![`./raster
-../data/{dog,glasses,laser-beams,sparkles}.png` should produce this image in
-`composite.ppm`.](images/composite.png)
-
-## Animation Generation Tasks
-
-The project includes a complete animation system for generating procedural heart and star animations:
-
-### `src/generate_heart_points.cpp`
-
-Generate a heart-shaped distribution of colored points using parametric equations. Creates points along a heart curve with:
-- Random particle offsets for organic appearance
-- Color gradient from bright pink/white (center) to dark red/pink (edges)
-- Configurable density distribution
-
-### `src/generate_star_points.cpp`
-
-Generate a five-pointed star distribution of colored points. Creates points along a star curve with:
-- Random particle offsets for sparkle effect
-- Color gradient from bright yellow/white (edges) to orange/red (center)
-- Parametric star shape generation
-
-### `src/render_points.cpp`
-
-Render colored point collections to RGB image buffers. Features:
-- Dark purple background for contrast
-- Configurable point radius (single pixel or filled circles)
-- Efficient bounds checking and pixel plotting
-- Support for both HeartPoint and StarPoint structures
-
-### `src/calculate_centroid.cpp`
-
-Calculate the geometric center of point distributions for animation transformations.
-
-### `src/transform_heart_points.cpp` & `src/transform_star_points.cpp`
-
-Apply scaling transformations to point collections around their centroids. Used for creating pulsing animation effects with smooth contraction/expansion.
-
-### `src/read_heart_json.cpp` & `src/read_star_json.cpp`
-
-Load point distributions from JSON files for consistent animation playback.
-
-### `src/write_heart_json.cpp` & `src/write_star_json.cpp`
-
-Save generated point distributions to JSON files for reuse and consistency.
-
-### `src/create_gif_from_frames.cpp`
-
-Create animated GIFs from sequences of PPM frame files using ImageMagick command-line tools.
-
-## Animation Output
-
-The program generates several animation-related files:
-
-- `heart_static.ppm` - Single frame rendering of heart shape
-- `star_static.ppm` - Single frame rendering of star shape  
-- `heart_frame_000.ppm` through `heart_frame_029.ppm` - 30 heart animation frames
-- `star_frame_000.ppm` through `star_frame_029.ppm` - 30 star animation frames
-- `star_animation.gif` - Animated GIF of the star pulsing effect (if ImageMagick available)
-- `../data/heart.json` - Generated heart point distribution
-- `../data/star.json` - Generated star point distribution
-
-The animations use cosine wave functions to create smooth pulsing effects with configurable amplitude and frame count.
-
-## Testing & Validation
-
-### Reference Validation
-Starting Fall 2024, we provide reference PPM files in `data/validation`. You can validate your core image processing implementation by comparing the RGB values of your output PPM files against the reference PPM files. Note that while the structure of your PPM files does not need to match the reference files exactly, the RGB values should be identical.
+  ]
+}
+```
+
+## 🧪 Testing
 
 ### Property-Based Testing
-The project includes property-based tests for animation functionality:
 
-- `test_animation_cosine.cpp` - Tests the mathematical properties of the cosine wave animation system
-- Validates smooth contraction/expansion cycles
-- Verifies symmetry and continuity properties
-- Tests with various frame counts and amplitudes
+The system includes comprehensive property-based tests:
 
-Compile and run the animation tests:
 ```bash
+# Compile and run animation tests
 cd build
 g++ -std=c++20 -I../include ../test_animation_cosine.cpp -o test_animation
 ./test_animation
 ```
 
-## Project Structure
+**Tested Properties:**
+- **Cosine Wave Correctness**: Contraction factors follow mathematical formula
+- **Symmetry**: Animation cycles are symmetric
+- **Continuity**: Smooth transitions between frames
+- **Extrema**: Correct minimum/maximum contraction points
+- **Periodicity**: Seamless looping
 
-The project now includes both original image processing functionality and new animation capabilities:
+### Sample Test Output
+
+```
+=== Property-Based Test: Animation Cosine Wave ===
+Feature: star-animation, Property 8
+Validates: Requirements 4.3
+
+--- Test 1: Standard parameters (30 frames, 0.15 amplitude) ---
+Testing cosine wave property with 30 frames and amplitude 0.15
+Testing cosine wave symmetry property...
+Testing cosine wave extrema property...
+  Min contraction: 0.85 at frame 0
+  Max contraction: 1 at frame 15
+Testing cosine wave continuity property...
+  Maximum change between consecutive frames: 0.0314159
+PASS: Standard parameters test
+
+✓ All property tests PASSED
+```
+
+## 📁 Project Structure
 
 ```
 .
-├── CMakeLists.txt          # Build configuration (C++20)
-├── main.cpp                # Entry point with full pipeline
-├── include/                # Header files
-│   ├── *.h                 # Original image processing functions
+├── README.md                   # This file
+├── main.cpp                    # Animation pipeline
+├── include/                    # Header files
 │   ├── generate_heart_points.h    # Heart shape generation
 │   ├── generate_star_points.h     # Star shape generation
-│   ├── render_points.h            # Point rendering system
-│   ├── create_gif_from_frames.h   # GIF animation creation
-│   └── transform_*_points.h       # Animation transformations
-├── src/                    # Implementation files
-│   ├── *.cpp               # All function implementations
-├── data/                   # Input images and generated data
-│   ├── *.png               # Sample input images
-│   ├── heart.json          # Generated heart point data
-│   ├── star.json           # Generated star point data
-│   └── validation/         # Reference PPM files
-├── build/                  # Build artifacts and output files
-├── json/                   # JSON library (nlohmann/json)
-└── test_animation_cosine.cpp   # Property-based animation tests
+│   ├── render_points.h            # Point rendering
+│   ├── transform_*_points.h       # Animation transforms
+│   ├── read_*_json.h              # JSON loading
+│   ├── write_*_json.h             # JSON saving
+│   ├── calculate_centroid.h       # Geometric center
+│   └── create_gif_from_frames.h   # GIF creation
+├── src/                        # Implementation files
+│   └── *.cpp                   # All function implementations
+├── data/                       # Generated data
+│   ├── heart.json              # Heart particle data
+│   └── star.json               # Star particle data
+├── build/                      # Build artifacts & output
+│   ├── *_frame_*.ppm           # Animation frames
+│   ├── *_static.ppm            # Static renderings
+│   └── *.gif                   # Animated GIFs
+└── test_animation_cosine.cpp   # Property-based tests
 ```
 
-### Submission
+## 🎯 Key Functions
 
-Submit your completed homework on MarkUs. Open the [MarkUs](https://markus.teach.cs.toronto.edu/markus) course
-page and submit all the `.cpp` files in your `src/` directory under
-Assignment 1: Raster Images in the `raster-images` repository.
+### Shape Generation
+- `generate_heart_points()` - Creates heart-shaped particle distribution
+- `generate_star_points()` - Creates five-pointed star distribution
 
-### Questions?
+### Animation System
+- `calculate_centroid()` - Finds geometric center for transformations
+- `transform_heart_points()` - Scales heart particles for animation
+- `transform_star_points()` - Scales star particles for animation
 
-Direct your questions to the [Issues page of this
-repository](https://github.com/ohnooj/computer-graphics-raster-images/issues).
+### Rendering & I/O
+- `render_points()` - Draws particles to RGB image buffer
+- `read_*_json()` - Loads particle data from JSON files
+- `write_*_json()` - Saves particle data to JSON files
+- `create_gif_from_frames()` - Converts PPM sequence to animated GIF
 
+## 🔧 Configuration
 
-### Answers?
+### Animation Parameters
 
-Help your fellow students by answering questions or positions helpful tips on
-[Issues page of this
-repository](https://github.com/ohnooj/computer-graphics-raster-images/issues).
+```cpp
+// Configurable in main.cpp
+const int num_frames = 30;                    // Animation length
+const double contraction_amplitude = 0.15;   // Pulse strength (15%)
+const int image_width = 500;                  // Output dimensions
+const int image_height = 500;
+const int point_radius = 1;                   // Particle size
+```
 
------------------------------------------------------------------------------
+### Background Color
 
-> #### ¹ Mac Users
->
-> You will need to install Xcode if you haven't already.
->
-> #### ² Linux Users
->
-> Many linux distributions do not include gcc and the basic development tools
-> in their default installation. On Ubuntu, you need to install the following
-> packages (more than needed for this assignment but should cover the whole
-> course):
->
->     sudo apt-get install git
->     sudo apt-get install build-essential
->     sudo apt-get install cmake
->     sudo apt-get install libx11-dev
->     sudo apt-get install mesa-common-dev libgl1-mesa-dev libglu1-mesa-dev
->     sudo apt-get install libxinerama1 libxinerama-dev
->     sudo apt-get install libxcursor-dev
->     sudo apt-get install libxrandr-dev
->     sudo apt-get install libxi-dev
->     sudo apt-get install libxmu-dev
->     sudo apt-get install libblas-dev
->
->
-> #### ³ Windows Users
->
-> Our assignments only support the Microsoft Visual Studio 2022 (and later) compiler in
-> 64bit mode. It will not work with a 32bit build and it will not work with
-> older versions of visual studio.
->
+```cpp
+// Dark purple background (RGB: 40, 20, 60)
+const unsigned char bg_r = 40;
+const unsigned char bg_g = 20; 
+const unsigned char bg_b = 60;
+```
+
+## 🎨 Visual Examples
+
+### Heart Animation Frames
+```
+Frame 0:  ♥ (most contracted)
+Frame 7:  ♥♥ (expanding)
+Frame 15: ♥♥♥ (fully expanded)
+Frame 22: ♥♥ (contracting)
+Frame 29: ♥ (back to contracted)
+```
+
+### Color Gradients
+
+**Heart**: Pink/White → Bright Pink → Dark Red/Pink
+**Star**: Yellow/White → Yellow/Orange → Orange/Red
+
+## 🚀 Advanced Features
+
+### Automatic JSON Management
+- Generates particle data on first run
+- Reuses existing data for consistency
+- Graceful error handling for malformed files
+
+### ImageMagick Integration
+- Automatic GIF creation when ImageMagick is available
+- Configurable frame delay (default: 3 centiseconds)
+- Infinite loop settings for seamless playback
+
+### Mathematical Precision
+- Double-precision coordinates for smooth animation
+- Floating-point tolerance in property tests
+- Consistent frame-to-frame transformations
+
+## 📊 Performance
+
+- **Generation**: ~5000 particles per shape
+- **Rendering**: Single-pass pixel plotting
+- **Memory**: Pre-allocated vectors for efficiency
+- **Animation**: 30 frames @ ~33 FPS equivalent
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+**No GIF output**: Install ImageMagick
+```bash
+# macOS
+brew install imagemagick
+
+# Ubuntu
+sudo apt-get install imagemagick
+```
+
+**Build errors**: Ensure C++20 support
+```bash
+# Check compiler version
+g++ --version  # Should be ≥ 10.0
+clang++ --version  # Should be ≥ 10.0
+```
+
+**Missing JSON files**: Files are auto-generated on first run
+```bash
+# Force regeneration
+rm ../data/heart.json ../data/star.json
+./raster
+```
+
+## 📈 Future Enhancements
+
+- **Multiple Shapes**: Triangle, hexagon, custom curves
+- **Physics Simulation**: Velocity, acceleration, collision
+- **Interactive Controls**: Real-time parameter adjustment
+- **Video Export**: MP4/WebM output formats
+- **3D Animation**: Z-axis transformations
+- **Color Animation**: Dynamic gradient shifts
+
+---
+
+*Built with C++20 • Tested with Property-Based Testing • Animated with Mathematics*
