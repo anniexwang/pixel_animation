@@ -1,4 +1,4 @@
-# Computer Graphics – Raster Images
+# Computer Graphics – Raster Images & Animation
 
 > **To get started:** Clone this repository:
 >
@@ -9,8 +9,7 @@
 
 ## Introduction
 
-Welcome to Computer Graphics! The main purpose of this assignment will be to get
-you up and running with C++17 and the cmake>v3.20 build setup used for our assignments.
+Welcome to Computer Graphics! This project combines fundamental raster image processing operations with procedural animation generation. The main purpose is to get you up and running with C++20 and cmake≥3.20 build setup while exploring both static image manipulation and dynamic animation creation.
 
 
 ### Prerequisite installation
@@ -21,6 +20,8 @@ Windows[³](#³windowsusers).
 
 We also assume that you have cloned this repository using the `--recursive`
 flag (if not then issue `git submodule update --init --recursive`).
+
+**Optional for GIF creation:** Install [ImageMagick](https://imagemagick.org/script/download.php) to enable animated GIF generation from frame sequences.
 
 ### Layout
 
@@ -86,6 +87,17 @@ Why don't you try this right now?
 Once built, you can execute the assignment from inside the `build/` using
 
     ./raster
+
+The program will:
+1. Process the default images (dog.png, glasses.png, laser-beams.png, sparkles.png) through all image processing operations
+2. Generate heart and star point distributions (saved as JSON files)
+3. Create static renderings of heart and star shapes
+4. Generate 30-frame animations showing pulsing heart and star effects
+5. Create an animated GIF (if ImageMagick is available)
+
+You can also specify custom input images:
+
+    ./raster path/to/your/image.png
 
 ## Background
 
@@ -207,10 +219,9 @@ saturation of an image (e.g., Instagram's "saturation" filter).
 
 ## Tasks
 
-> Every assignment, including this one, will contain a **Tasks** section. This
-> will enumerate all of the tasks a student will need to complete for this
-> assignment. These tasks will match the header/implementation pairs in the
-> `include/`/`src/` directories.
+> This project contains both the original raster image processing tasks and additional animation generation features. The tasks are organized into two main categories: **Core Image Processing** and **Animation Generation**.
+
+## Core Image Processing Tasks
 
 ### Groundrules
 
@@ -236,6 +247,7 @@ Write an rgb or grayscale image to a .ppm file.
 
 At this point, you should start seeing output files:
 
+**Core Image Processing Output:**
  - `bayer.ppm`
  - `composite.ppm`
  - `demosaicked.ppm`
@@ -245,6 +257,15 @@ At this point, you should start seeing output files:
  - `rgb.ppm`
  - `rotated.ppm`
  - `shifted.ppm`
+
+**Animation Output:**
+ - `heart_static.ppm` - Static heart rendering
+ - `star_static.ppm` - Static star rendering
+ - `heart_frame_000.ppm` to `heart_frame_029.ppm` - Heart animation frames
+ - `star_frame_000.ppm` to `star_frame_029.ppm` - Star animation frames
+ - `star_animation.gif` - Animated GIF (requires ImageMagick)
+ - `../data/heart.json` - Heart point distribution data
+ - `../data/star.json` - Star point distribution data
 
 ![If you've implemented `src/rgba_to_rgb.cpp` correctly then `./raster
 ../data/dog.png` should produce this image in
@@ -332,8 +353,112 @@ Compute C = A Over B, where A and B are semi-transparent rgba images and
 ../data/{dog,glasses,laser-beams,sparkles}.png` should produce this image in
 `composite.ppm`.](images/composite.png)
 
-### *\*New\** Validation
-Starting Fall 2024, we now provide reference PPM files in `data/validation`. You can use these to validate your implementation by comparing the RGB values of your output PPM files against the reference PPM files. Note that while the structure of your PPM files does not need to match the reference files exactly, the RGB values should be identical.
+## Animation Generation Tasks
+
+The project includes a complete animation system for generating procedural heart and star animations:
+
+### `src/generate_heart_points.cpp`
+
+Generate a heart-shaped distribution of colored points using parametric equations. Creates points along a heart curve with:
+- Random particle offsets for organic appearance
+- Color gradient from bright pink/white (center) to dark red/pink (edges)
+- Configurable density distribution
+
+### `src/generate_star_points.cpp`
+
+Generate a five-pointed star distribution of colored points. Creates points along a star curve with:
+- Random particle offsets for sparkle effect
+- Color gradient from bright yellow/white (edges) to orange/red (center)
+- Parametric star shape generation
+
+### `src/render_points.cpp`
+
+Render colored point collections to RGB image buffers. Features:
+- Dark purple background for contrast
+- Configurable point radius (single pixel or filled circles)
+- Efficient bounds checking and pixel plotting
+- Support for both HeartPoint and StarPoint structures
+
+### `src/calculate_centroid.cpp`
+
+Calculate the geometric center of point distributions for animation transformations.
+
+### `src/transform_heart_points.cpp` & `src/transform_star_points.cpp`
+
+Apply scaling transformations to point collections around their centroids. Used for creating pulsing animation effects with smooth contraction/expansion.
+
+### `src/read_heart_json.cpp` & `src/read_star_json.cpp`
+
+Load point distributions from JSON files for consistent animation playback.
+
+### `src/write_heart_json.cpp` & `src/write_star_json.cpp`
+
+Save generated point distributions to JSON files for reuse and consistency.
+
+### `src/create_gif_from_frames.cpp`
+
+Create animated GIFs from sequences of PPM frame files using ImageMagick command-line tools.
+
+## Animation Output
+
+The program generates several animation-related files:
+
+- `heart_static.ppm` - Single frame rendering of heart shape
+- `star_static.ppm` - Single frame rendering of star shape  
+- `heart_frame_000.ppm` through `heart_frame_029.ppm` - 30 heart animation frames
+- `star_frame_000.ppm` through `star_frame_029.ppm` - 30 star animation frames
+- `star_animation.gif` - Animated GIF of the star pulsing effect (if ImageMagick available)
+- `../data/heart.json` - Generated heart point distribution
+- `../data/star.json` - Generated star point distribution
+
+The animations use cosine wave functions to create smooth pulsing effects with configurable amplitude and frame count.
+
+## Testing & Validation
+
+### Reference Validation
+Starting Fall 2024, we provide reference PPM files in `data/validation`. You can validate your core image processing implementation by comparing the RGB values of your output PPM files against the reference PPM files. Note that while the structure of your PPM files does not need to match the reference files exactly, the RGB values should be identical.
+
+### Property-Based Testing
+The project includes property-based tests for animation functionality:
+
+- `test_animation_cosine.cpp` - Tests the mathematical properties of the cosine wave animation system
+- Validates smooth contraction/expansion cycles
+- Verifies symmetry and continuity properties
+- Tests with various frame counts and amplitudes
+
+Compile and run the animation tests:
+```bash
+cd build
+g++ -std=c++20 -I../include ../test_animation_cosine.cpp -o test_animation
+./test_animation
+```
+
+## Project Structure
+
+The project now includes both original image processing functionality and new animation capabilities:
+
+```
+.
+├── CMakeLists.txt          # Build configuration (C++20)
+├── main.cpp                # Entry point with full pipeline
+├── include/                # Header files
+│   ├── *.h                 # Original image processing functions
+│   ├── generate_heart_points.h    # Heart shape generation
+│   ├── generate_star_points.h     # Star shape generation
+│   ├── render_points.h            # Point rendering system
+│   ├── create_gif_from_frames.h   # GIF animation creation
+│   └── transform_*_points.h       # Animation transformations
+├── src/                    # Implementation files
+│   ├── *.cpp               # All function implementations
+├── data/                   # Input images and generated data
+│   ├── *.png               # Sample input images
+│   ├── heart.json          # Generated heart point data
+│   ├── star.json           # Generated star point data
+│   └── validation/         # Reference PPM files
+├── build/                  # Build artifacts and output files
+├── json/                   # JSON library (nlohmann/json)
+└── test_animation_cosine.cpp   # Property-based animation tests
+```
 
 ### Submission
 
