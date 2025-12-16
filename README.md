@@ -4,9 +4,13 @@ A procedural animation system that generates pulsing heart and star effects usin
 
 ## 🎬 Animation Preview
 
-![Star Animation](build/star_animation.gif)
+![Star Animation](images/star_animation.gif)
 
 *Pulsing star animation with 30 frames showing smooth contraction and expansion*
+
+![Heart Animation](images/heart_animation.gif)
+
+*Pulsing heart animation with 30 frames showing smooth contraction and expansion*
 
 ## ✨ Features
 
